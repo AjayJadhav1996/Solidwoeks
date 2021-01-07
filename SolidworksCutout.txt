@@ -1,0 +1,133 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.IO;
+using SolidWorks.Interop.sldworks;
+
+namespace cutoutSM
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            SldWorks swApp;
+            swApp = new SldWorks();
+            ModelDoc2 swModel;
+            PartDoc modoc;
+            Feature swFeature;
+            swModel = swApp.ActiveDoc;
+            SelectionMgr swSelMgr;
+            SketchSegment swSketchSeg;
+            Face2 faceofCut;
+            Entity cutent1;
+            Entity cutent2;
+            Edge swEdge1;
+            Edge swEdge2;
+            swSelMgr = swModel.SelectionManager;
+            swFeature = swModel.FirstFeature();
+            List<Entity> list1 = new List<Entity>();
+            List<Entity> list2 = new List<Entity>();
+            List<object> list3 = new List<object>();
+            List<object> list4 = new List<object>();
+            List<double> dist = new List<double>();
+            double [] varParam;
+            double val = 0.0;
+            while (swFeature != null)
+            {
+                string ftype = swFeature.GetTypeName();
+                if (ftype == "SMBaseFlange")
+                {
+                    int fcount = swFeature.GetFaceCount();
+                    var faces = swFeature.GetFaces();
+                    foreach (object fc in faces)
+                    {
+                        faceofCut = (Face2)fc;
+                        int edgcount = faceofCut.GetEdgeCount();
+                        var cutedge = faceofCut.GetEdges();
+                        int stredge = faceofCut.IGetTessTriStripEdgeSize();
+                        foreach (object edg in cutedge)
+                        {
+                           
+                                cutent1 = (Entity)edg;
+                                cutent1.Select(true);
+                                cutent1.Select(false);
+                                list1.Add(cutent1);
+                            list3.Add(edg);
+                            
+                        }
+                    }
+                }
+                if (ftype == "Cut")
+                {
+                    int fcount = swFeature.GetFaceCount();
+                    var faces = swFeature.GetFaces();
+                    foreach (object fc in faces)
+                    {
+                        faceofCut = (Face2)fc;
+                        int edgcount = faceofCut.GetEdgeCount();
+                        var cutedge = faceofCut.GetEdges();
+                        int stredge = faceofCut.IGetTessTriStripEdgeSize();
+                        foreach (object edg in cutedge)
+                        {
+                            
+                                cutent2  = (Entity)edg;
+                                cutent2.Select(true);
+                                cutent2.Select(false);
+                                list2.Add(cutent2);
+                            list4.Add(edg);
+                        }
+                    }
+
+                }
+                swFeature = swFeature.GetNextFeature();
+            }
+            double[] startpt= new double[3];
+            object startpt1 ; object startpt2;
+            //double[] startpt2 = new double[3];
+            double [] endpt= new double[3];
+            double []startpara = new double[2];
+            double[] endpara = new double[2];
+            object pos1; object pos2; double dis;
+            swEdge1 = (Edge)list1[18];
+            //startpt1 = (double[])((Vertex)swEdge1.GetStartVertex()).GetPoint();
+            startpt = (double[])((Vertex)swEdge1.GetStartVertex()).GetPoint();
+            endpt = (double[])((Vertex)swEdge1.GetEndVertex()).GetPoint();
+            startpara = (double[])swEdge1.GetParameter(startpt[0], startpt[1], startpt[2]);
+            endpara = (double[])swEdge1.GetParameter(endpt[0], endpt[1], endpt[2]);
+            swEdge2 = (Edge)list2[10];
+            //startpt2 = (double[])((Vertex)swEdge2.GetStartVertex()).GetPoint();
+            double[] paramD1 = new double[2];
+            paramD1[0] = startpara[0];
+            paramD1[1] = endpara[0];
+            varParam = paramD1;
+            //int retval = list1[18].GetDistance(list2[10], true, varParam, out pos1, out pos2,out dis);
+            foreach (object ent1 in list3)
+            {
+                object en1 = ent1;
+                foreach (object ent2 in list4)
+                {
+                    object en2 = ent2;
+                    val = swModel.ClosestDistance(en1, en2, out startpt1, out startpt2);
+                    if (val != 0)
+                    {
+                        dist.Add(val);
+                    }
+                }
+                
+            }
+            int disco = dist.Count;
+            dist.Min();
+        }
+    }
+}
